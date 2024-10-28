@@ -1,6 +1,9 @@
 
 -- Description: Create table users
 
+CREATE EXTENSION citext;
+
+
 CREATE TABLE users (
 	user_id       UUID        NOT NULL,
 	name          TEXT        NOT NULL,

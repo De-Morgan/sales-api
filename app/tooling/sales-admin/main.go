@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sales-api/app/tooling/sales-admin/command"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -17,7 +18,7 @@ import (
 
 func main() {
 
-	err := genToken()
+	err := command.Migrate()
 	if err != nil {
 		log.Fatal(err)
 	}

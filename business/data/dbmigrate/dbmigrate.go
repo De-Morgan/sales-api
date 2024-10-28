@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
 )
@@ -20,7 +19,7 @@ func Migration(ctx context.Context, db *sqlx.DB) error {
 	if err != nil {
 		return fmt.Errorf("postgres instance: %w", err)
 	}
-	m, err := migrate.NewWithDatabaseInstance("file:///business/data/dbmigrate/sql", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance("file://", "postgres", driver)
 	if err != nil {
 		return fmt.Errorf("migration: %w", err)
 	}

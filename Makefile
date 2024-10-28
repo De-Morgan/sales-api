@@ -73,6 +73,10 @@ dev-update-apply: all dev-load dev-apply
 dev-logs:
 	kubectl logs --namespace=$(NAMESPACE) -l app=$(APP) --all-containers=true -f --tail=100 --max-log-requests=6 | go run app/tooling/logfmt/main.go -service=$(SERVICE_NAME)
 
+dev-logs-init:
+	kubectl logs --namespace=$(NAMESPACE) -l app=$(APP) -f --tail=100 -c init-migrate
+
+dev-status:
 pgcli:
 	pgcli postgresql://postgres:postgres@localhost:5432
 	
