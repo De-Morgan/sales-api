@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"runtime"
 	"sales-api/app/services/sales-api/handlers"
+	"sales-api/business/data/dbsql/pgx"
 	v1 "sales-api/business/web/v1"
 	"sales-api/business/web/v1/auth"
 	"sales-api/business/web/v1/debug"
@@ -109,6 +110,24 @@ func run(ctx context.Context, log *logger.Logger, build string) error {
 	expvar.NewString("build").Set(build)
 
 	// -------------------------------------------------------------------------
+	// Database Support
+
+	db, err := pgx.Open(pgx.Config{
+		User:         cfg.DB.User,
+		Password:     cfg.DB.Password,
+		Host:         cfg.DB.Host,
+		Name:         cfg.DB.Name,
+		MaxIdleConns: cfg.DB.MaxIdleConns,
+		MaxOpenConns: cfg.DB.MaxOpenConns,
+		DisableTLS:   cfg.DB.DisableTLS,
+	})
+	if err != nil {
+		return fmt.Errorf("connecting to db: %w", err)
+	}
+
+	log.Info(ctx, "startup", "status", "initializing database support", "host", cfg.DB.Host)
+
+	// -------------------------------------------------------------------------
 	// Initialize authentication support
 
 	log.Info(ctx, "startup", "status", "initializing authentication support")
@@ -152,6 +171,7 @@ func run(ctx context.Context, log *logger.Logger, build string) error {
 		Shutdown: shutdown,
 		Log:      log,
 		Auth:     auth,
+		DB:       db,
 	}
 
 	handler := v1.APIMux(apiCfg, handlers.Routes())

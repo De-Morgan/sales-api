@@ -6,6 +6,8 @@ import (
 	"sales-api/business/web/v1/mid"
 	"sales-api/foundation/logger"
 	"sales-api/foundation/web"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // APIMuxConfig contains all the mandatory systems required by handlers.
@@ -14,6 +16,7 @@ type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *logger.Logger
 	Auth     *auth.Auth
+	DB       *sqlx.DB
 }
 
 type RouteAdder interface {
