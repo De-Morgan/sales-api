@@ -118,6 +118,8 @@ run:
 run-help:
 	go run app/services/sales-api/main.go --help | go run app/tooling/logfmt/main.go
 
+test:
+	go test ./... -v	
 
 curl:
 	curl -il http://localhost:3000/v1/hack
@@ -132,7 +134,7 @@ curl-auth:
 	curl -il -H "Authorization: Bearer ${TOKEN}" http://localhost:3000/v1/hack/auth
 
 curl-create:
-	curl -il -X POST -H 'Content-Type: application/json' -d '{"name":"bill","email":"b@gmail.com","roles":["ADMIN"],"department":"IT","password":"123","passwordConfirm":"123"}' http://localhost:3000/v1/users
+	curl -il -X POST -H 'Content-Type: application/json' -d '{"name":"bill","email":"a@gmail.com","roles":["USER"],"department":"IT","password":"123","passwordConfirm":"123"}' http://localhost:3000/v1/users
 
 load:
 	hey -m GET -c 100 -n 100000 "http://localhost:3000/hack"

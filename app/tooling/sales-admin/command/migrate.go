@@ -54,8 +54,8 @@ func Migrate() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	if err := dbmigrate.Migration(ctx, db); err != nil {
+	source := "file://"
+	if err := dbmigrate.Migration(ctx, source, db); err != nil {
 		return fmt.Errorf("migrate database: %w", err)
 	}
 	fmt.Println("migrations complete")

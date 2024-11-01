@@ -11,7 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func Migration(ctx context.Context, db *sqlx.DB) error {
+func Migration(ctx context.Context, source string, db *sqlx.DB) error {
 	if err := pgx.StatusCheck(ctx, db); err != nil {
 		return fmt.Errorf("status check database: %w", err)
 	}
@@ -19,7 +19,7 @@ func Migration(ctx context.Context, db *sqlx.DB) error {
 	if err != nil {
 		return fmt.Errorf("postgres instance: %w", err)
 	}
-	m, err := migrate.NewWithDatabaseInstance("file://", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance(source, "postgres", driver)
 	if err != nil {
 		return fmt.Errorf("migration: %w", err)
 	}

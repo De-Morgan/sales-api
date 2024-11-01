@@ -22,10 +22,8 @@ func (d *TestDatabase) TearDown() {
 	d.container.Terminate(context.Background())
 }
 
-func SetUpTestDatabase() *TestDatabase {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	container, db, err := createPostgresContainer(ctx)
+func SetUpTestDatabase(ctx context.Context, dbName string) *TestDatabase {
+	container, db, err := createPostgresContainer(ctx, dbName)
 	if err != nil {
 		log.Fatalf("createPostgresContainer failed %v", err)
 	}
@@ -37,14 +35,14 @@ func SetUpTestDatabase() *TestDatabase {
 
 // ====================================================================================
 
-func createPostgresContainer(ctx context.Context) (container testcontainers.Container, db *sqlx.DB, err error) {
+func createPostgresContainer(ctx context.Context, dbName string) (container testcontainers.Container, db *sqlx.DB, err error) {
 	containerPort := "5432"
 	req := testcontainers.ContainerRequest{
 		Image: "postgres:16.4",
 		Env: map[string]string{
 			"POSTGRES_USER":     "root",
 			"POSTGRES_PASSWORD": "password",
-			"POSTGRES_DB":       "testdb",
+			"POSTGRES_DB":       dbName,
 		},
 		ExposedPorts: []string{containerPort + "/tcp"},
 		WaitingFor: wait.ForAll(
@@ -69,13 +67,13 @@ func createPostgresContainer(ctx context.Context) (container testcontainers.Cont
 		return container, nil, fmt.Errorf("failed to get container external port: %v", err)
 	}
 	log.Println("container ready and running at port: ", p.Port())
-	connStr := fmt.Sprintf("postgresql://root:password@%s:%s/testdb?sslmode=disable", host, p.Port())
+	connStr := fmt.Sprintf("postgresql://root:password@%s:%s/%s?sslmode=disable", host, p.Port(), dbName)
 
 	db, err = sqlx.Open("pgx", connStr)
 	if err != nil {
 		return container, db, fmt.Errorf("failed to establish database connection: %v", err)
 	}
-	defer db.Close()
-	err = dbmigrate.Migration(ctx, db)
+	source := "file://../../data/dbmigrate/sql"
+	err = dbmigrate.Migration(ctx, source, db)
 	return
 }
