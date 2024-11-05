@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sales-api/business/core/user"
 	"sales-api/foundation/logger"
 	"strings"
 	"sync"
@@ -18,7 +19,7 @@ var ErrForbidden = errors.New("attempted action is not allowed")
 
 type Claims struct {
 	jwt.RegisteredClaims
-	Roles []string `json:"roles"`
+	Roles []user.Role `json:"roles"`
 }
 
 // KeyLookup declares a method set of behavior for looking up

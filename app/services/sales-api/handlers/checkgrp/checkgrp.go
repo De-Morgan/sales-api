@@ -4,33 +4,45 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"sales-api/business/data/dbsql/pgx"
 	"sales-api/foundation/logger"
 	"sales-api/foundation/web"
+	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type Handlers struct {
 	build string
 	log   *logger.Logger
+	db    *sqlx.DB
 }
 
-func New(build string, logger *logger.Logger) *Handlers {
-	return &Handlers{build: build, log: logger}
+func New(build string, logger *logger.Logger, db *sqlx.DB) *Handlers {
+	return &Handlers{build: build, log: logger, db: db}
 }
 
 // Readiness checks if the database is ready and if not will return a 500 status.
 // Do not respond by just returning an error because further up in the call
 // stack it will interpret that as a non-trusted error.
 func (h *Handlers) readiness(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	//Todo log this when it fails
 	status := "ok"
 	statusCode := http.StatusOK
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	if err := pgx.StatusCheck(ctx, h.db); err != nil {
+		status = "db not ready"
+		statusCode = http.StatusInternalServerError
+		h.log.Info(ctx, "readiness failure", "status", status)
+	}
 
 	data := struct {
 		Status string `json:"status"`
 	}{
 		Status: status,
 	}
-	//h.log.Info(ctx, "readiness", "status", status)
 	return web.Respond(ctx, w, data, statusCode)
 }
 

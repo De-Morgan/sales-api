@@ -19,7 +19,7 @@ type add struct{}
 func (a *add) Add(app *web.App, cfg v1.APIMuxConfig) {
 
 	hackgrp.Route(app, hackgrp.Config{Auth: cfg.Auth})
-	checkgrp.Route(app, checkgrp.Config{Build: cfg.Build, Logger: cfg.Log})
+	checkgrp.Route(app, checkgrp.Config{Build: cfg.Build, Logger: cfg.Log, DB: cfg.DB})
 	usergrp.Route(app, usergrp.Config{
 		Build: cfg.Build,
 		Log:   cfg.Log,
