@@ -20,7 +20,7 @@ type QueryFilter struct {
 // Validate checks the data in the model is considered clean.
 func (qf *QueryFilter) Validate() error {
 	if err := validate.Check(qf); err != nil {
-		return fmt.Errorf("validate: %v", err)
+		return fmt.Errorf("validate: %w", err)
 	}
 	return nil
 }

@@ -27,8 +27,8 @@ var (
 type Repository interface {
 	ExecuteUnderTransaction(tx transaction.Transaction) (Repository, error)
 	Create(ctx context.Context, usr User) error
-	// Update(ctx context.Context, usr User) error
-	// Delete(ctx context.Context, usr User) error
+	Update(ctx context.Context, usr User) error
+	Delete(ctx context.Context, userID uuid.UUID) error
 	Query(ctx context.Context, filter QueryFilter, orderBy order.By, page int, pageSize int) ([]User, error)
 	Count(ctx context.Context, filter QueryFilter) (int, error)
 	QueryByID(ctx context.Context, userID uuid.UUID) (User, error)
@@ -123,6 +123,56 @@ func (c *Core) Query(ctx context.Context, filter QueryFilter, orderBy order.By, 
 // Count returns the total number of users.
 func (c *Core) Count(ctx context.Context, filter QueryFilter) (int, error) {
 	return c.repository.Count(ctx, filter)
+}
+
+// Update modifies information about a user.
+
+func (c *Core) Update(ctx context.Context, usr User, uu UpdateUser) (User, error) {
+	if uu.Name != nil {
+		usr.Name = *uu.Name
+	}
+	if uu.Email != nil {
+		usr.Email = *uu.Email
+	}
+
+	if uu.Roles != nil {
+		usr.Roles = uu.Roles
+	}
+
+	if uu.Password != nil {
+		pw, err := bcrypt.GenerateFromPassword([]byte(*uu.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return User{}, fmt.Errorf("generatefrompassword: %w", err)
+		}
+		usr.PasswordHash = pw
+	}
+
+	if uu.Department != nil {
+		usr.Department = *uu.Department
+	}
+
+	if uu.Enabled != nil {
+		usr.Enabled = *uu.Enabled
+	}
+
+	usr.UpdatedAt = time.Now()
+
+	if err := c.repository.Update(ctx, usr); err != nil {
+		return User{}, fmt.Errorf("update: %w", err)
+	}
+
+	return usr, nil
+
+}
+
+// Delete removes the specified user.
+
+func (c *Core) Delete(ctx context.Context, userID uuid.UUID) error {
+
+	if err := c.repository.Delete(ctx, userID); err != nil {
+		return fmt.Errorf("delete: %w", err)
+	}
+	return nil
 }
 
 // ============================================================================

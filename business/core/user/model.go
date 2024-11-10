@@ -35,4 +35,5 @@ type UpdateUser struct {
 	Roles      []Role
 	Department *string
 	Enabled    *bool
+	Password   *string
 }

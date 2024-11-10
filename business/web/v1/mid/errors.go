@@ -40,7 +40,13 @@ func Errors(log *logger.Logger) web.Middleware {
 						Error: reqErr.Error(),
 					}
 					status = reqErr.Status
-
+				case validate.IsFieldErrors(err):
+					fieldErrors := validate.GetFieldErrors(err)
+					er = response.ErrorDocument{
+						Error:  "data validation error",
+						Fields: fieldErrors.Fields(),
+					}
+					status = http.StatusBadRequest
 				case auth.IsAuthError(err):
 					er = response.ErrorDocument{
 						Error: http.StatusText(http.StatusUnauthorized),

@@ -93,6 +93,8 @@ func toAppUsers(users []user.User) []AppUser {
 	return items
 }
 
+// =============================================================================
+
 // AppLoginRequest contains information needed to login a new user.
 type AppLoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
@@ -111,4 +113,57 @@ func (app AppLoginRequest) Validate() error {
 type AppLoginResponse struct {
 	User  AppUser `json:"user"`
 	Token string  `json:"token"`
+}
+
+// =============================================================================
+// AppUpdateUser contains information needed to update a user.
+type AppUpdateUser struct {
+	Name       *string  `json:"name"`
+	Roles      []string `json:"roles"`
+	Email      *string  `json:"email" validate:"omitempty,email"`
+	Department *string  `json:"department"`
+	Password   *string  `json:"password"`
+	Enabled    *bool    `json:"enabled"`
+}
+
+func toCoreUpdateUser(app AppUpdateUser) (user.UpdateUser, error) {
+	var roles []user.Role
+	if app.Roles != nil {
+		roles = make([]user.Role, len(app.Roles))
+		for i, rl := range app.Roles {
+			role, err := user.ParseRole(rl)
+			if err != nil {
+				return user.UpdateUser{}, validate.NewFieldsError("roles", fmt.Errorf("invalid value for role %q", rl))
+			}
+			roles[i] = role
+		}
+	}
+	var addr *mail.Address
+	if app.Email != nil {
+		var err error
+		addr, err = mail.ParseAddress(*app.Email)
+		if err != nil {
+			return user.UpdateUser{}, validate.NewFieldsError("email", fmt.Errorf("invalid email: %q", *app.Email))
+		}
+	}
+	nu := user.UpdateUser{
+		Name:       app.Name,
+		Email:      addr,
+		Roles:      roles,
+		Department: app.Department,
+		Enabled:    app.Enabled,
+		Password:   app.Password,
+	}
+
+	return nu, nil
+
+}
+
+// Validate checks the data in the model is considered clean.
+func (app AppUpdateUser) Validate() error {
+	if err := validate.Check(app); err != nil {
+		return fmt.Errorf("validate: %w", err)
+	}
+
+	return nil
 }

@@ -10,7 +10,6 @@ import (
 	"sales-api/business/data/page"
 	"sales-api/business/data/transaction"
 	"sales-api/business/web/v1/auth"
-	"sales-api/business/web/v1/mid"
 	"sales-api/business/web/v1/response"
 	"sales-api/foundation/validate"
 	"sales-api/foundation/web"
@@ -119,24 +118,59 @@ func (h *Handlers) Login(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 // QueryByID returns a user by its ID.
 func (h *Handlers) QueryByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	id := web.Param(r, "user_id")
-	if id == "" {
-		return response.NewError(errors.New("id is required"), http.StatusBadRequest)
-	}
-	uuid, err := uuid.Parse(id)
+	userID := auth.GetUserID(ctx)
+	usr, err := h.queryUserByID(ctx, userID)
 	if err != nil {
-		return response.NewError(mid.ErrInvalidID, http.StatusBadRequest)
+		return err
 	}
-	usr, err := h.user.QueryByID(ctx, uuid)
+	return web.Respond(ctx, w, userResponse(usr), http.StatusOK)
+}
+
+// UpdateByID update a user by its ID.
+func (h *Handlers) UpdateByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+
+	h, err := h.executeUnderTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	userID := auth.GetUserID(ctx)
+
+	var app AppUpdateUser
+	if err := web.Decode(r, &app); err != nil {
+		return response.NewError(err, http.StatusBadRequest)
+	}
+
+	usr, err := h.queryUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	uu, err := toCoreUpdateUser(app)
+	if err != nil {
+		return err
+	}
+	nu, err := h.user.Update(ctx, usr, uu)
+	if err != nil {
+		return fmt.Errorf("update: userID[%s] uu[%+v]: %w", userID, uu, err)
+	}
+
+	return web.Respond(ctx, w, userResponse(nu), http.StatusOK)
+
+}
+
+// QueryByID returns a user by its ID.
+func (h *Handlers) DeleteByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	userID := auth.GetUserID(ctx)
+	err := h.user.Delete(ctx, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, user.ErrNotFound):
-			return response.NewError(user.ErrNotFound, http.StatusNotFound)
+			response.NewError(user.ErrNotFound, http.StatusNotFound)
 		default:
-			return fmt.Errorf("QueryByID: id:[%q] :%w", id, err)
+			return err
 		}
 	}
-	return web.Respond(ctx, w, userResponse(usr), http.StatusOK)
+	return web.Respond(ctx, w, nil, http.StatusNoContent)
 }
 
 // Query returns a list of users with paging.
@@ -146,6 +180,7 @@ func (h *Handlers) Query(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return err
 	}
 	filter, err := parseFilter(r)
+
 	if err != nil {
 		return err
 	}
@@ -168,4 +203,18 @@ func (h *Handlers) Query(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	return web.Respond(ctx, w, response.NewPageDocument(toAppUsers(users), total, page.Page, page.PageSize), http.StatusOK)
+}
+
+// ========================================================================
+func (h *Handlers) queryUserByID(ctx context.Context, userID uuid.UUID) (user.User, error) {
+	usr, err := h.user.QueryByID(ctx, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, user.ErrNotFound):
+			return user.User{}, response.NewError(user.ErrNotFound, http.StatusNotFound)
+		default:
+			return user.User{}, fmt.Errorf("QueryByID: id:[%q] :%w", userID, err)
+		}
+	}
+	return usr, nil
 }

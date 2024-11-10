@@ -130,6 +130,51 @@ func (r *PostgresRepository) Query(ctx context.Context, filter user.QueryFilter,
 	return usrs, nil
 }
 
+// Update replaces a user document in the database.
+func (r *PostgresRepository) Update(ctx context.Context, usr user.User) error {
+	const q = `
+	UPDATE users
+	SET
+		"name" = :name,
+		"email" = :email,
+		"roles" = :roles,
+		"password_hash" = :password_hash,
+		"department" = :department,
+		"updated_at" = :updated_at
+	WHERE
+	 	user_id = :user_id`
+
+	if err := pgx.NamedExecContext(ctx, r.log, r.db, q, toDBUser(usr)); err != nil {
+		if errors.Is(err, pgx.ErrDBDuplicatedEntry) {
+			return user.ErrUniqueEmail
+		}
+		return fmt.Errorf("namedexeccontext: %w", err)
+	}
+	return nil
+}
+
+// Update replaces a user document in the database.
+func (r *PostgresRepository) Delete(ctx context.Context, userID uuid.UUID) error {
+
+	data := struct {
+		UserId string `db:"user_id"`
+	}{
+		UserId: userID.String(),
+	}
+	const q = `
+	DELETE FROM users
+	WHERE
+	 	user_id = :user_id`
+
+	if err := pgx.NamedExecContext(ctx, r.log, r.db, q, data); err != nil {
+		if errors.Is(err, pgx.ErrDBNotFound) {
+			return user.ErrNotFound
+		}
+		return fmt.Errorf("namedexeccontext: %w", err)
+	}
+	return nil
+}
+
 func (r *PostgresRepository) Count(ctx context.Context, filter user.QueryFilter) (int, error) {
 	data := map[string]any{}
 
