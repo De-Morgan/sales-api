@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"sales-api/app/services/sales-api/handlers/checkgrp"
-	"sales-api/app/services/sales-api/handlers/hackgrp"
 	"sales-api/app/services/sales-api/handlers/usergrp"
 	v1 "sales-api/business/web/v1"
 	"sales-api/foundation/web"
@@ -18,7 +17,6 @@ type add struct{}
 
 func (a *add) Add(app *web.App, cfg v1.APIMuxConfig) {
 
-	hackgrp.Route(app, hackgrp.Config{Auth: cfg.Auth})
 	checkgrp.Route(app, checkgrp.Config{Build: cfg.Build, Logger: cfg.Log, DB: cfg.DB})
 	usergrp.Route(app, usergrp.Config{
 		Build: cfg.Build,
