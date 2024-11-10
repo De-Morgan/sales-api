@@ -1,6 +1,40 @@
 package response
 
-import "errors"
+import (
+	"errors"
+	"math"
+)
+
+type PageDocument[T any] struct {
+	Items      []T `json:"items"`
+	Total      int `json:"total_items"`
+	TotalPages int `json:"total_pages"`
+	Page       int `json:"page"`
+	PageSize   int `json:"page_size"`
+}
+
+func NewPageDocument[T any](items []T, total, page, pageSize int) PageDocument[T] {
+	totalPage := math.Ceil(float64(total) / float64(pageSize))
+	return PageDocument[T]{
+		Items:      items,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: int(totalPage),
+	}
+}
+
+type Success[T any] struct {
+	Status bool `json:"status"`
+	Data   T    `json:"data"`
+}
+
+func NewSuccess[T any](data T) Success[T] {
+	return Success[T]{
+		Status: true,
+		Data:   data,
+	}
+}
 
 // ErrorDocument is the form used for API responses from failures in the API.
 type ErrorDocument struct {

@@ -73,7 +73,7 @@ func createPostgresContainer(ctx context.Context, dbName string) (container test
 	if err != nil {
 		return container, db, fmt.Errorf("failed to establish database connection: %v", err)
 	}
-	source := "file://../../data/dbmigrate/sql"
+	source := "file:///Users/mogan/workspace/src/github.com/demorgan/sales-api/business/data/dbmigrate/sql"
 	err = dbmigrate.Migration(ctx, source, db)
 	return
 }

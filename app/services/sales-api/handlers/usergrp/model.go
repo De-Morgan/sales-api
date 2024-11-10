@@ -83,3 +83,32 @@ func (app AppNewUser) Validate() error {
 	}
 	return nil
 }
+
+func toAppUsers(users []user.User) []AppUser {
+	items := make([]AppUser, len(users))
+	for i, usr := range users {
+		items[i] = toAppUser(usr)
+	}
+
+	return items
+}
+
+// AppLoginRequest contains information needed to login a new user.
+type AppLoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+// Validate checks the data in the model is considered clean.
+func (app AppLoginRequest) Validate() error {
+	if err := validate.Check(app); err != nil {
+		return err
+	}
+	return nil
+}
+
+// AppLoginResponse contains information returned after user login.
+type AppLoginResponse struct {
+	User  AppUser `json:"user"`
+	Token string  `json:"token"`
+}

@@ -9,6 +9,7 @@ import (
 	"sales-api/business/core/user"
 	"sales-api/business/data/dbsql/pgx"
 	"sales-api/business/data/order"
+	"sales-api/business/data/transaction"
 	"sales-api/foundation/logger"
 
 	"github.com/google/uuid"
@@ -17,7 +18,7 @@ import (
 
 type PostgresRepository struct {
 	log *logger.Logger
-	db  *sqlx.DB
+	db  sqlx.ExtContext
 }
 
 var _ user.Repository = (*PostgresRepository)(nil)
@@ -27,6 +28,19 @@ func NewRepository(log *logger.Logger, db *sqlx.DB) *PostgresRepository {
 		log: log,
 		db:  db,
 	}
+}
+
+func (r *PostgresRepository) ExecuteUnderTransaction(tx transaction.Transaction) (user.Repository, error) {
+	ec, err := pgx.GetExtContext(tx)
+
+	if err != nil {
+		return nil, err
+	}
+	r = &PostgresRepository{
+		log: r.log,
+		db:  ec,
+	}
+	return r, nil
 }
 
 func (s *PostgresRepository) Create(ctx context.Context, usr user.User) error {
@@ -114,6 +128,27 @@ func (r *PostgresRepository) Query(ctx context.Context, filter user.QueryFilter,
 		return nil, err
 	}
 	return usrs, nil
+}
+
+func (r *PostgresRepository) Count(ctx context.Context, filter user.QueryFilter) (int, error) {
+	data := map[string]any{}
+
+	const q = `
+	SELECT 
+		count(1)
+	FROM
+		users`
+
+	buf := bytes.NewBufferString(q)
+	r.applyFilter(filter, data, buf)
+
+	var count struct {
+		Count int `db:"count"`
+	}
+	if err := pgx.NamedQueryStruct(ctx, r.log, r.db, buf.String(), data, &count); err != nil {
+		return 0, fmt.Errorf("namedquerystruct: %w", err)
+	}
+	return count.Count, nil
 }
 
 // =======================================================================================================

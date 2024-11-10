@@ -14,7 +14,7 @@ func (r *PostgresRepository) applyFilter(filter user.QueryFilter, data map[strin
 		wc = append(wc, "user_id = :user_id")
 	}
 	if filter.Name != nil {
-		data["name"] = fmt.Sprint("%%%s%%", *filter.Name)
+		data["name"] = fmt.Sprintf("%%%s%%", *filter.Name)
 		wc = append(wc, "name LIKE :name")
 	}
 	if filter.Email != nil {
